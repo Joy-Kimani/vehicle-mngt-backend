@@ -113,3 +113,10 @@ CREATE TABLE OTPs (
   otp VARCHAR(10) NOT NULL,
   expires_at DATETIME NOT NULL
 );
+
+
+ALTER TABLE Vehicle ADD front_image_url VARCHAR(MAX),back_image_url VARCHAR(MAX),side_image_url VARCHAR(MAX),interior_image_url VARCHAR(MAX);
+
+
+
+CREATE TABLE VehicleImages (image_id INT IDENTITY PRIMARY KEY,vehicle_id INT NOT NULL,image_type VARCHAR(50), image_url VARCHAR(MAX) NOT NULL,FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id));

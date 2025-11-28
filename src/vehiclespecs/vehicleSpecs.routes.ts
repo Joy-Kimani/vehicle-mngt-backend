@@ -4,18 +4,18 @@ import * as vehicleSpecControllers from './vehicleSpecs.controller.js'
 const vehicleSpecRoutes = new Hono()
 
 // Get all 
-vehicleSpecRoutes.get('/vehicle',vehicleSpecControllers.getAllVehicleSpecs)
+vehicleSpecRoutes.get('/vehiclespec',vehicleSpecControllers.getAllVehicleSpecs)
 
 // Get by id
-vehicleSpecRoutes.get('/vehicle/:vehicle_spec_id', vehicleSpecControllers.getVehicleSpecsById)
+vehicleSpecRoutes.get('/vehiclespec/:vehicle_spec_id', vehicleSpecControllers.getVehicleSpecsById)
 
 // Create 
-vehicleSpecRoutes.post('/vehicle', vehicleSpecControllers.createVehicleSpecs)
+vehicleSpecRoutes.post('/vehiclespec', vehicleSpecControllers.createVehicleSpecs)
 
 // Update 
-vehicleSpecRoutes.put('/vehicle/:vehicle_spec_id', vehicleSpecControllers.updateVehicleSpecs)
+vehicleSpecRoutes.put('/vehiclespec/:vehicle_spec_id', vehicleSpecControllers.updateVehicleSpecs)
 
 // Delete 
-vehicleSpecRoutes.delete('/vehicle/:vehicle_spec_id', vehicleSpecControllers.deleteVehicleSpecs)
+vehicleSpecRoutes.delete('/vehiclespec/:vehicle_spec_id', vehicleSpecControllers.deleteVehicleSpecs)
 
 export default vehicleSpecRoutes

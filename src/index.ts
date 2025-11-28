@@ -12,6 +12,7 @@ import ticketRoutes from './tickets/ticket.route.js';
 import paymentRoutes from './payments/payment.route.js';
 import vehicleRoutes from './vehicles/vehicles.route.js';
 import vehicleSpecRoutes from './vehiclespecs/vehicleSpecs.routes.js';
+import dashboardRoutes from './UserDashboard/dashboard.routes.js';
 
 const app = new Hono()
 
@@ -39,6 +40,7 @@ app.route('/api', ticketRoutes)
 app.route('/api', paymentRoutes)
 app.route('/api', vehicleRoutes)
 app.route('/api', vehicleSpecRoutes)
+app.route('api', dashboardRoutes)
 
 // 404 Handler
 app.notFound((c: Context) => {
