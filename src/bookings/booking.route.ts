@@ -6,11 +6,11 @@ const bookingRoutes = new Hono()
 //get all  bookings
 bookingRoutes.get('/bookings', bookingControllers.getAllBookings)
 
-bookingRoutes.get('/bookings/:booking_id', bookingControllers.getBookingById)
+bookingRoutes.get('/bookings/:user_id', bookingControllers.getBookingById)
 
-bookingRoutes.post('/bookings/', bookingControllers.createBooking)
+bookingRoutes.post('/bookings', bookingControllers.createBooking)
 
-bookingRoutes.put('/bookings/:booking_id', bookingControllers.updateBooking)
+bookingRoutes.put('/bookings/:user_id', bookingControllers.updateBooking)
 
 bookingRoutes.delete('/bookings/:booking_id', bookingControllers.deleteBooking)
 

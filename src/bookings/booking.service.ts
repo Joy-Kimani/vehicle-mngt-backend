@@ -40,7 +40,22 @@ export const createBookingService = async (user_id: number,vehicle_id: number,bo
     return result.rowsAffected[0] === 1 ? "Booking Created Successfully": "Failed to create booking, try again";
 };
 
-export const updateBookingService = async (booking_id: number,user_id: number,vehicle_id: number,booking_date: string,return_date: string,total_amount: number,booking_status: string): Promise<string> => {
+// export const updateBookingService = async (booking_id: number,user_id: number,vehicle_id: number,booking_date: string,return_date: string,total_amount: number,booking_status: string): Promise<string> => {
+//     const db = getDbPool();
+//     const result = await db.request()
+//         .input("booking_id", booking_id)
+//         .input("user_id", user_id)
+//         .input("vehicle_id", vehicle_id)
+//         .input("booking_date", booking_date)
+//         .input("return_date", return_date)
+//         .input("total_amount", total_amount)
+//         .input("booking_status", booking_status)
+//         .query(`UPDATE Bookings SET user_id = @user_id,vehicle_id = @vehicle_id,booking_date = @booking_date,return_date = @return_date,total_amount = @total_amount,booking_status = @booking_status OUTPUT INSERTED.*WHERE booking_id = @booking_id`);
+
+//     return result.rowsAffected[0] === 1 ? "Booking Updated Successfully": "Failed to update booking, try again";
+// };
+
+export const updateBookingService = async (booking_id: number,user_id: number,vehicle_id: number,booking_date: string,return_date: string,total_amount: number,booking_status: string) => {
     const db = getDbPool();
     const result = await db.request()
         .input("booking_id", booking_id)
@@ -50,10 +65,14 @@ export const updateBookingService = async (booking_id: number,user_id: number,ve
         .input("return_date", return_date)
         .input("total_amount", total_amount)
         .input("booking_status", booking_status)
-        .query(`UPDATE Bookings SET user_id = @user_id,vehicle_id = @vehicle_id,booking_date = @booking_date,return_date = @return_date,total_amount = @total_amount,booking_status = @booking_status OUTPUT INSERTED.*WHERE booking_id = @booking_id`);
-
-    return result.rowsAffected[0] === 1 ? "Booking Updated Successfully": "Failed to update booking, try again";
+        .query(`UPDATE Bookings SET user_id=@user_id, vehicle_id=@vehicle_id, booking_date=@booking_date, return_date=@return_date, total_amount=@total_amount, booking_status=@booking_status, updated_at=GETDATE()
+            WHERE booking_id=@booking_id;
+            SELECT *, GETDATE() as updated_at_time FROM Bookings WHERE booking_id=@booking_id;
+        `);
+    if (result.rowsAffected[0] === 0) return null;
+    return result.recordset[0]; 
 };
+
 
 export const deleteBookingService = async (booking_id: number): Promise<string> => {
     const db = getDbPool();

@@ -32,13 +32,37 @@ export const getPendingPayments =  async(c:Context) => {
 export const getTotalRentalsDone = async(c:Context) => {
      const user_id = parseInt(c.req.param("user_id"))
      try {
-        const totalRentalsDone = await dashboardServices.getTotalRentalsDoneService(user_id);
+    const totalRentalsDone = await dashboardServices.getTotalRentalsDoneService(user_id);
         
-        if (!totalRentalsDone) return c.json({error:'error getting rentals'})
-
-        return c.json(totalRentalsDone, 200)    
+    if (totalRentalsDone === undefined || totalRentalsDone === null) {
+      return c.json({ error: "error getting rentals" }, 500);
+    }
+    return c.json(totalRentalsDone, 200);
+  
     } catch (error) {
         console.error("Error fetching total rentals done", error);
         return c.json({error: "Failed to fetch rentals"})
     }
+}
+
+export const getUpcomingReturnsController = async (c: Context) => {
+  try {
+    const user_id = c.req.param("user_id");
+    const days = Number(c.req.query("days")) || 7;
+
+    if (!user_id) {
+      return c.json({ error: "user_id is required" }, 400);
+    }
+
+    const upcomingReturns =
+      await dashboardServices.getUpcomingReturnsService( Number(user_id), days );
+
+    return c.json({
+      count: upcomingReturns.length,
+      upcoming: upcomingReturns
+    });
+  } catch (error) {
+    console.error("Error fetching upcoming returns", error);
+    return c.json({ error: "Server error" }, 500);
+  }
 }

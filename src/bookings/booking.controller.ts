@@ -50,25 +50,44 @@ export const createBooking = async (c:Context) => {
 //update user by user_id
 export const updateBooking = async (c: Context) => {
     try {
-        const user_id = parseInt(c.req.param('booking_id'))
-        const body = await c.req.json() as {booking_id: number,user_id: number,vehicle_id: number,booking_date: string,return_date: string,total_amount: number,booking_status: string}
+        const user_id = Number(c.req.param("user_id"));
+        const body = await c.req.json();
+        const { booking_id } = body;
 
-        //check if booking exists/ has already been made by a user
-        const checkExists = await bookingServices.getBookingByUserService(user_id);
-        if (checkExists === null) {
-            return c.json({ error: 'Booking not found' }, 404);
-        }
-        const result = await bookingServices.updateBookingService(body.booking_id, body.user_id,body.vehicle_id, body.booking_date,body.return_date, body.total_amount,body.booking_status);
-        if (result === null) {
-            return c.json({ error: 'Failed to update booking' }, 404);
+        if (!booking_id || !user_id) {
+            return c.json({ error: "booking_id and user_id are required" }, 400);
         }
 
-        return c.json({ message: 'Booking updated successfully', updated_user: result }, 200);
+        const existingBooking = await bookingServices.getBookingByIdService(booking_id);
+        if (!existingBooking) {
+            return c.json({ error: "Booking not found" }, 404);
+        }
+        if (existingBooking.user_id !== user_id) {
+            return c.json({ error: "Booking does not belong to this user" }, 403);
+        }
+
+        const updatedBooking = await bookingServices.updateBookingService( booking_id, body.user_id, body.vehicle_id, body.booking_date, body.return_date, body.total_amount, body.booking_status );
+
+        if (!updatedBooking) {
+            return c.json({ error: "Failed to update booking" }, 500);
+        }
+
+        const updatedTime = new Date(updatedBooking.updated_at);
+        const formattedTime = `${updatedTime.getHours().toString().padStart(2,'0')}:${updatedTime.getMinutes().toString().padStart(2,'0')}`;
+
+        return c.json({
+            message: "Booking updated successfully",
+            updated_booking: updatedBooking,
+            updated_at: updatedBooking.updated_at,
+            formatted_updated_at: formattedTime
+        });
+
     } catch (error) {
-        console.error('Error updating Booking:', error);
-        return c.json({ error: 'Failed to update booking' }, 500);
+        console.error("Error updating booking:", error);
+        return c.json({ error: "Server error" }, 500);
     }
-}
+};
+
 
 
 //delete

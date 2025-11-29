@@ -71,6 +71,9 @@ CREATE TABLE Bookings(
       ON DELETE CASCADE
 );
 
+--  added multiple states
+ALTER TABLE Bookings ADD CONSTRAINT CHK_BookingStatus CHECK (booking_status IN ('Pending', 'Approved', 'Active', 'Completed', 'Cancelled', 'Rejected'));
+
 
 -- 5. Payments Table:
 
@@ -120,3 +123,31 @@ ALTER TABLE Vehicle ADD front_image_url VARCHAR(MAX),back_image_url VARCHAR(MAX)
 
 
 CREATE TABLE VehicleImages (image_id INT IDENTITY PRIMARY KEY,vehicle_id INT NOT NULL,image_type VARCHAR(50), image_url VARCHAR(MAX) NOT NULL,FOREIGN KEY (vehicle_id) REFERENCES Vehicle(vehicle_id));
+
+
+
+USE VehicleRentalMngtDB;
+GO
+
+
+
+INSERT INTO Bookings (user_id, vehicle_id, booking_date, return_date, total_amount, booking_status)
+VALUES
+-- Pending
+(3, 2, '2025-12-05 10:00:00', '2025-12-07 10:00:00', 25000, 'Pending'),
+
+-- Approved
+(3, 3, '2025-12-10 09:00:00', '2025-12-12 09:00:00', 30000, 'Approved'),
+
+-- Active
+(3, 4, '2025-11-27 08:00:00', '2025-11-29 08:00:00', 28000, 'Active'),
+
+-- Completed
+(3, 5, '2025-11-01 08:00:00', '2025-11-03 08:00:00', 30000, 'Completed'),
+
+-- Cancelled
+(3, 6, '2025-11-15 10:00:00', '2025-11-17 10:00:00', 27000, 'Cancelled'),
+
+-- Rejected
+(3, 2, '2025-12-20 10:00:00', '2025-12-22 10:00:00', 25000, 'Rejected');
+GO
