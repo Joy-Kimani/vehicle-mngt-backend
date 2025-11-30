@@ -15,5 +15,7 @@ dashboardRoutes.get('/dashboard/total/:user_id',dashboardControllers.getTotalRen
 //upcoming returns
 dashboardRoutes.get('/dashboard/returns/:user_id', dashboardControllers.getUpcomingReturnsController)
 
+dashboardRoutes.get('/dashboard/recent-activity/:user_id',dashboardControllers.getRecentActivity)
+
 
 export default dashboardRoutes

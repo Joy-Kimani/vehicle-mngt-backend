@@ -151,3 +151,63 @@ VALUES
 -- Rejected
 (3, 2, '2025-12-20 10:00:00', '2025-12-22 10:00:00', 25000, 'Rejected');
 GO
+
+
+SELECT TOP 50 *
+FROM (
+    /* 1. BOOKING CREATED */
+    SELECT 
+        B.booking_id AS id,
+        'booking_created' AS activity_type,
+        CONCAT('Booking #', B.booking_id, ' created for vehicle ', B.vehicle_id) AS description,
+        B.booking_date AS activity_date,
+        B.booking_status AS status
+    FROM Bookings B
+    WHERE B.user_id = @user_id
+
+    UNION ALL
+
+    /* 2. BOOKING STATUS UPDATES (Approved, Active, Completed, Cancelled, Rejected) */
+    SELECT 
+        B.booking_id AS id,
+        'booking_status' AS activity_type,
+        CONCAT('Booking #', B.booking_id, ' updated to ', B.booking_status) AS description,
+        B.updated_at AS activity_date,
+        B.booking_status AS status
+    FROM Bookings B
+    WHERE B.user_id = @user_id
+      AND B.updated_at IS NOT NULL
+
+    UNION ALL
+
+    /* 3. PAYMENTS */
+    SELECT 
+        P.payment_id AS id,
+        CASE 
+            WHEN P.payment_status = 'Completed' THEN 'payment_completed'
+            WHEN P.payment_status = 'Failed' THEN 'payment_failed'
+            ELSE 'payment_pending'
+        END AS activity_type,
+        CONCAT('Payment of ', P.amount, ' for booking #', P.booking_id) AS description,
+        P.payment_date AS activity_date,
+        P.payment_status AS status
+    FROM Payments P
+    INNER JOIN Bookings B ON P.booking_id = B.booking_id
+    WHERE B.user_id = @user_id
+
+    UNION ALL
+
+    /* 4. UPCOMING RETURNS (Next 7 days) */
+    SELECT
+        B.booking_id AS id,
+        'upcoming_return' AS activity_type,
+        CONCAT('Vehicle ', B.vehicle_id, ' is due for return') AS description,
+        B.return_date AS activity_date,
+        'Due Soon' AS status
+    FROM Bookings B
+    WHERE B.user_id = @user_id
+      AND B.booking_status = 'Active'
+      AND B.return_date BETWEEN GETDATE() AND DATEADD(DAY, 7, GETDATE())
+
+) AS UnifiedActivity
+ORDER BY activity_date DESC;

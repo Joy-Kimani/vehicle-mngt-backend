@@ -66,3 +66,22 @@ export const getUpcomingReturnsController = async (c: Context) => {
     return c.json({ error: "Server error" }, 500);
   }
 }
+
+
+export const getRecentActivity = async (c: Context) => {
+  try {
+    const user_id = c.req.param("user_id");
+
+    if (!user_id) {
+      return c.json({ error: "User ID is required" }, 400);
+    }
+
+    const recentActivity = await dashboardServices.getRecentActivityService(Number(user_id));
+
+    return c.json(recentActivity, 200);
+
+  } catch (error) {
+    console.error("Error fetching recent activity:", error);
+    return c.json({ error: "Failed to fetch recent activity" }, 500);
+  }
+};

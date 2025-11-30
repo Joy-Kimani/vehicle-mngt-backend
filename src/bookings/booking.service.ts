@@ -89,3 +89,4 @@ export const getBookingByUserService = async (user_id: number): Promise<BookingR
         .query('SELECT * FROM Bookings WHERE user_id = @user_id');
     return result.recordset[0] || null;
 };
+

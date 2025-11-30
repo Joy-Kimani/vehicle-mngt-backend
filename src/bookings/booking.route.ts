@@ -12,6 +12,6 @@ bookingRoutes.post('/bookings', bookingControllers.createBooking)
 
 bookingRoutes.put('/bookings/:user_id', bookingControllers.updateBooking)
 
-bookingRoutes.delete('/bookings/:booking_id', bookingControllers.deleteBooking)
+bookingRoutes.delete('/bookings/:user_id/:booking_id', bookingControllers.deleteBooking)
 
 export default bookingRoutes
