@@ -90,3 +90,256 @@ export const getBookingByUserService = async (user_id: number): Promise<BookingR
     return result.recordset[0] || null;
 };
 
+//get booking and payment details 
+export const bookingPaymentService = async (booking_id:number) => {
+    const db = getDbPool();
+    const result = await db.request()
+        .input('booking_id',booking_id)
+        .query(`
+      SELECT      
+        b.booking_id, b.user_id, b.vehicle_id, b.booking_date, b.return_date,
+        b.total_amount, b.booking_status,
+
+        v.rental_rate, v.front_image_url, v.back_image_url, 
+        v.side_image_url, v.interior_image_url,
+
+        s.manufacturer, s.model, s.year, 
+        s.transmission, s.fuel_type, s.seating_capacity, 
+        s.color, s.features,
+
+        p.payment_id, p.amount AS payment_amount, 
+        p.payment_status, p.payment_date, 
+        p.payment_method, p.transaction_id
+
+      FROM Bookings b
+      JOIN Vehicle v ON b.vehicle_id = v.vehicle_id
+      JOIN VehicleSpecs s ON v.vehicle_spec_id = s.vehicle_spec_id
+      LEFT JOIN Payments p ON b.booking_id = p.booking_id
+      WHERE b.booking_id = @booking_id`)
+    const row = result.recordset[0];
+
+    if(!row) return null;
+
+    return{
+        booking: {
+        booking_id: row.booking_id,
+        user_id: row.user_id,
+        vehicle_id: row.vehicle_id,
+        booking_date: row.booking_date,
+        return_date: row.return_date,
+        total_amount: row.total_amount,
+        booking_status: row.booking_status,
+      },
+      vehicle: {
+        vehicle_id: row.vehicle_id,
+        manufacturer: row.manufacturer,
+        model: row.model,
+        year: row.year,
+        transmission: row.transmission,
+        fuel_type: row.fuel_type,
+        seating_capacity: row.seating_capacity,
+        color: row.color,
+        features: row.features,
+        front_image_url: row.front_image_url,
+        back_image_url: row.back_image_url,
+        side_image_url: row.side_image_url,
+        interior_image_url: row.interior_image_url,
+      },
+      payment: row.payment_id
+        ? {
+            payment_id: row.payment_id,
+            booking_id: row.booking_id,
+            amount: row.payment_amount,
+            payment_status: row.payment_status,
+            payment_date: row.payment_date,
+            payment_method: row.payment_method,
+            transaction_id: row.transaction_id,
+          }
+        : null,
+    };
+}
+
+// extend booking
+export const extendBookingService = async (booking_id:number, new_return_date: string) => {
+    const db = getDbPool();
+    const result = await db.request()
+        .input('booking_id',booking_id)
+        .input("new_return_date", new_return_date)
+        .query(` 
+            UPDATE Bookings
+            SET return_date = @new_return_date, updated_at = GETDATE()
+            WHERE booking_id = @booking_id
+            `)
+        return { success: true, message: "Booking extended successfully" };
+}
+
+//cancel booking
+export const cancelBookingService = async(booking_id:number) => {
+    const db = getDbPool();
+    const result = await db.request()
+        .input('booking_id',booking_id)
+        .query(`
+            UPDATE Bookings
+            SET booking_status = 'Cancelled', updated_at = GETDATE()
+            WHERE booking_id = @booking_id
+            `)
+        return { success: true, message: "Booking cancelled" };
+}
+
+export const getBookingsByUserService = async (user_id: number): Promise<BookingResponse[]> => {
+    const db = getDbPool();
+    const result = await db.request()
+        .input('user_id', user_id)
+        .query(` SELECT * FROM Bookings WHERE user_id = @user_id ORDER BY created_at DESC`);
+
+    return result.recordset;
+};
+
+
+
+
+
+
+
+
+
+
+
+// export const bookingService = {
+//   /** Get booking + vehicle + payment details */
+//   async getBookingDetailsService(booking_id: number) {
+//     const db = await getDbPool();
+
+//     const query = `
+//       SELECT 
+//         b.booking_id, b.user_id, b.vehicle_id, b.booking_date, b.return_date,
+//         b.total_amount, b.booking_status,
+
+//         v.rental_rate, v.front_image_url, v.back_image_url, 
+//         v.side_image_url, v.interior_image_url,
+
+//         s.manufacturer, s.model, s.year, 
+//         s.transmission, s.fuel_type, s.seating_capacity, 
+//         s.color, s.features,
+
+//         p.payment_id, p.amount AS payment_amount, 
+//         p.payment_status, p.payment_date, 
+//         p.payment_method, p.transaction_id
+
+//       FROM Bookings b
+//       JOIN Vehicle v ON b.vehicle_id = v.vehicle_id
+//       JOIN VehicleSpecs s ON v.vehicle_spec_id = s.vehicle_spec_id
+//       LEFT JOIN Payments p ON b.booking_id = p.booking_id
+//       WHERE b.booking_id = @booking_id
+//     `;
+
+//     const result = await db
+//       .request()
+//       .input("booking_id", booking_id)
+//       .query(query);
+
+//     const row = result.recordset[0];
+//     if (!row) return null;
+
+//     return {
+//       booking: {
+//         booking_id: row.booking_id,
+//         user_id: row.user_id,
+//         vehicle_id: row.vehicle_id,
+//         booking_date: row.booking_date,
+//         return_date: row.return_date,
+//         total_amount: row.total_amount,
+//         booking_status: row.booking_status,
+//       },
+//       vehicle: {
+//         vehicle_id: row.vehicle_id,
+//         manufacturer: row.manufacturer,
+//         model: row.model,
+//         year: row.year,
+//         transmission: row.transmission,
+//         fuel_type: row.fuel_type,
+//         seating_capacity: row.seating_capacity,
+//         color: row.color,
+//         features: row.features,
+//         front_image_url: row.front_image_url,
+//         back_image_url: row.back_image_url,
+//         side_image_url: row.side_image_url,
+//         interior_image_url: row.interior_image_url,
+//       },
+//       payment: row.payment_id
+//         ? {
+//             payment_id: row.payment_id,
+//             booking_id: row.booking_id,
+//             amount: row.payment_amount,
+//             payment_status: row.payment_status,
+//             payment_date: row.payment_date,
+//             payment_method: row.payment_method,
+//             transaction_id: row.transaction_id,
+//           }
+//         : null,
+//     };
+//   },
+
+//   /** Extend booking */
+//   async extendBookingService(booking_id: number, new_return_date: string) {
+//     const db = await getDbPool();
+
+//     await db
+//       .request()
+//       .input("booking_id", booking_id)
+//       .input("new_return_date", new_return_date)
+//       .query(`
+//         UPDATE Bookings
+//         SET return_date = @new_return_date, updated_at = GETDATE()
+//         WHERE booking_id = @booking_id
+//       `);
+
+//     return { success: true, message: "Booking extended successfully" };
+//   },
+
+//   /** Cancel booking */
+//   async cancelBookingService(booking_id: number) {
+//     const db = await getDbPool();
+
+//     await db
+//       .request()
+//       .input("booking_id", booking_id)
+//       .query(`
+//         UPDATE Bookings
+//         SET booking_status = 'Cancelled', updated_at = GETDATE()
+//         WHERE booking_id = @booking_id
+//       `);
+
+//     return { success: true, message: "Booking cancelled" };
+//   },
+
+//   /** Payment processing */
+//   async processPaymentService(booking_id: number, amount: number, method: string) {
+//     const db = await getDbPool();
+
+//     const query = `
+//       INSERT INTO Payments (
+//         booking_id, amount, payment_status, payment_date, payment_method, transaction_id
+//       )
+//       VALUES (
+//         @booking_id, @amount, 'Completed', GETDATE(), @method,
+//         CAST(ABS(CHECKSUM(NEWID())) AS VARCHAR(50))
+//       );
+
+//       UPDATE Bookings 
+//       SET booking_status = 'Approved' 
+//       WHERE booking_id = @booking_id;
+
+//       SELECT * FROM Payments WHERE payment_id = SCOPE_IDENTITY();
+//     `;
+
+//     const result = await db
+//       .request()
+//       .input("booking_id", booking_id)
+//       .input("amount", amount)
+//       .input("method", method)
+//       .query(query);
+
+//     return result.recordset[0];
+//   },
+// };
