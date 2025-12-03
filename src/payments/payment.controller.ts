@@ -1,5 +1,9 @@
 import { type Context } from "hono";
 import * as paymentServices from "./payment.service.js";
+import { markBookingPaid } from "./payment.service.js";
+import { getBookingByIdService } from "../bookings/booking.service.js";
+import { initializePaymentServices } from "./initialize-payment.js";
+import axios from "axios";
 
 //get all
 export const getAllPayments = async (c: Context) => {
@@ -61,9 +65,7 @@ export const createPayment = async (c: Context) => {
     }
 };
 
-// =============================
-// UPDATE PAYMENT
-// =============================
+//update
 export const updatePayment = async (c: Context) => {
     try {
         const payment_id = parseInt(c.req.param("payment_id"));
@@ -104,9 +106,7 @@ export const updatePayment = async (c: Context) => {
     }
 };
 
-// =============================
-// DELETE PAYMENT
-// =============================
+//delete
 export const deletePayment = async (c: Context) => {
     const payment_id = parseInt(c.req.param("payment_id"));
 
@@ -128,3 +128,169 @@ export const deletePayment = async (c: Context) => {
         return c.json({ error: "Failed to delete payment" }, 500);
     }
 };
+
+//initialize payment
+export const initializePayment = async (c: Context) => {
+  try {
+    const body = await c.req.json();
+    const { email, amount, booking_id, method } = body;
+
+    if (!email || !amount || !booking_id) {
+      return c.json(
+        { error: "Missing required fields: email, amount, booking_id" },
+        400
+      );
+    }
+
+    // check if booking exists
+    const booking = await getBookingByIdService(booking_id);
+    if (booking === null) {
+      return c.json({ error: "Booking not found" }, 404);
+    }
+
+    // initialize Paystack Payment (FIXED)
+    const transaction: any = await paymentServices.initializePaymentServices(
+      email,
+      amount,
+      booking_id
+    );
+
+    if (!transaction?.data?.reference) {
+      return c.json({ error: "Failed to initialize payment" }, 500);
+    }
+
+    // create payment record
+    const paymentCreated = await paymentServices.createPaymentRecord(
+      booking_id,
+      amount,
+      method || "Paystack",
+      transaction.data.reference
+    );
+
+
+    if (paymentCreated === null) {
+      return c.json(
+        { error: "Failed to create payment record" },
+        500
+      );
+    }
+
+    return c.json(
+      {
+        message: "Payment initialized successfully",
+        authorization_url: transaction.data.authorization_url,
+        reference: transaction.data.reference,
+      },
+      200
+    );
+
+  } catch (error) {
+    console.error("Error initializing payment:", error);
+    return c.json({ error: "Payment initialization failed" }, 500);
+  }
+};
+
+
+
+
+
+// payment webhook
+// export const paymentWebhook = async (c: Context) => {
+//   const event = await c.req.json();
+
+//   if (event.event === "charge.success") {
+//     const booking_id = event.data.metadata.booking_id;
+//     const reference = event.data.reference;
+
+//     await paymentServices.markPaymentSuccessful(reference); 
+//     await markBookingPaid(booking_id);
+
+//     console.log("Payment Success → Booking Updated:", booking_id);
+//   }
+
+//   return c.text("OK", 200);
+// };
+export const paymentWebhook = async (c: Context) => {
+  const event = await c.req.json();
+  console.log("Webhook payload:", JSON.stringify(event, null, 2));
+
+  const { event: eventType } = event;
+
+  if (eventType === "charge.success") {
+    const booking_id = Number(event.data.metadata.booking_id);
+    const reference = event.data.reference.trim();
+
+    const paymentRows = await paymentServices.markPaymentSuccessful(reference);
+    const bookingRows = await markBookingPaid(booking_id);
+
+    console.log(`Payment rows updated: ${paymentRows}, Booking rows updated: ${bookingRows}`);
+
+    return c.json({
+      status: "success",
+      message: "Payment recorded and booking updated",
+      paymentRows,
+      bookingRows
+    }, 200);
+  } else {
+    console.warn(`Unhandled webhook event type: ${eventType}`);
+    return c.json({ status: "ignored", message: `Event type ${eventType} not handled` }, 200);
+  }
+};
+
+export const verifyPayment = async (c: Context) => {
+  try {
+    const reference = c.req.query("reference");
+
+    if (!reference) {
+      return c.json({ error: "Missing reference" }, 400);
+    }
+
+    const result = await axios.get(
+      `https://api.paystack.co/transaction/verify/${reference}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        },
+      }
+    );
+
+    const data = result.data.data;
+
+    if (data.status === "success") {
+      const booking_id = data.metadata.booking_id;
+
+      await paymentServices.markPaymentSuccessful(reference);
+      await markBookingPaid(booking_id);
+
+      return c.json(
+        {
+          status: "success",
+          message: "Payment verified successfully",
+          booking_id,
+        },
+        200
+      );
+    }
+
+    return c.json(
+      {
+        status: "failed",
+        message: "Payment not successful",
+      },
+      400
+    );
+  } catch (error) {
+    console.error("Error verifying payment:", error);
+    return c.json({ error: "Verification failed" }, 500);
+  }
+};
+
+export const paymentStatus = async (c: Context) => {
+  try {
+    const statusCounts = await paymentServices.paymentStatus();
+    return c.json(statusCounts, 200);
+  } catch (error) {
+    console.error("Error fetching payment status:", error);
+    return c.json({ error: "Failed to fetch payment status" }, 500);
+  }
+}

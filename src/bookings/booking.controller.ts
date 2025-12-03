@@ -1,6 +1,16 @@
 import { type Context } from "hono"
 import * as bookingServices from './booking.service.js'
 
+interface BookingPayload {
+  id: number;
+  property: string;
+  user: string;
+  startDate: string;
+  endDate: string;
+  amount: number;
+  status: string;
+}
+
 //get all bookings
 export const getAllBookings = async(c: Context) => {
     try{
@@ -204,4 +214,46 @@ export const getBookingsByUser = async (c: Context) => {
         console.error("Error fetching user bookings:", error);
         return c.json({ error: "Failed to fetch bookings" }, 500);
     }
+};
+
+//get booking + vehicle + payment details
+export const getBookingManagement = async (c: Context) => {
+    const booking_id = parseInt(c.req.param('booking_id'));
+
+    try {
+        const bookingDetails = await bookingServices.getBookingManagementService(booking_id);
+
+        if (!bookingDetails) {
+            return c.json({ message: "No details found for this booking" }, 404);
+        }
+
+        return c.json(bookingDetails, 200);
+    } catch (error) {
+        console.error("Error fetching booking details:", error);
+        return c.json({ error: "Failed to fetch booking details" }, 500);
+    }
+};
+
+
+
+export const getFetchBookingsMangement = async (c: Context) => {
+  try {
+    const payload = await c.req.json() as BookingPayload[];
+
+    if (!Array.isArray(payload) || payload.length === 0) {
+      return c.json({ message: "Request body must be a non-empty array" }, 400);
+    }
+
+    const result = await bookingServices.fetchBookingsManagementService(payload);
+
+    return c.json(result, 200);
+
+  } catch (error) {
+    console.error("Error processing bookings:", error);
+
+    return c.json(
+      { error: error instanceof Error ? error.message : "Internal server error" },
+      500
+    );
+  }
 };

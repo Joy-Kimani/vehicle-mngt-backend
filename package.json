@@ -11,6 +11,7 @@
     "@hono/prometheus": "^1.0.2",
     "@types/mssql": "^9.1.8",
     "@types/nodemailer": "^7.0.3",
+    "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "dotenv": "^17.2.3",

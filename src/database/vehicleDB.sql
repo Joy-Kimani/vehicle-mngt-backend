@@ -211,3 +211,6 @@ FROM (
 
 ) AS UnifiedActivity
 ORDER BY activity_date DESC;
+
+
+ALTER TABLE Payments ALTER COLUMN transaction_id NVARCHAR(255);

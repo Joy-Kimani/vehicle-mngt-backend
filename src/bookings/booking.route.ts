@@ -22,6 +22,8 @@ bookingRoutes.put('/bookings/dashboard/extend/:booking_id', bookingControllers.e
 
 bookingRoutes.put('/bookings/dashboard/cancel/:booking_id', bookingControllers.cancelBooking)
 
+bookingRoutes.get('/bookings/vehicle/:vehicle_id', bookingControllers.getBookingManagement);
 
+bookingRoutes.post('/bookings/management', bookingControllers.getFetchBookingsMangement);
 
 export default bookingRoutes
