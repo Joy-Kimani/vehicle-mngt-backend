@@ -23,22 +23,51 @@ export const getBookingByIdService = async (booking_id: number): Promise<Booking
     const db = getDbPool();
     const result = await db.request()
         .input('booking_id', booking_id)
-        .query('SELECT * FROM Bookings WHERE booking_id = @booking_id');
+         .query(`
+      SELECT 
+        b.booking_id, 
+        b.total_amount, 
+        u.email AS user_email
+      FROM Bookings b
+      JOIN Users u ON b.user_id = u.user_id
+      WHERE b.booking_id = @booking_id
+    `);
     return result.recordset[0] || null;
 };
 
-export const createBookingService = async (user_id: number,vehicle_id: number,booking_date: string,return_date: string,total_amount: number,booking_status: string): Promise<string> => {
-    const db = getDbPool();
-    const result = await db.request()
-        .input("user_id", user_id)
-        .input("vehicle_id", vehicle_id)
-        .input("booking_date", booking_date)
-        .input("return_date", return_date)
-        .input("total_amount", total_amount)
-        .input("booking_status", booking_status)
-        .query(`INSERT INTO Bookings (user_id, vehicle_id, booking_date, return_date,total_amount, booking_status) OUTPUT INSERTED.*VALUES (@user_id, @vehicle_id, @booking_date, @return_date, @total_amount, @booking_status)`);
-    return result.rowsAffected[0] === 1 ? "Booking Created Successfully": "Failed to create booking, try again";
+export const createBookingService = async (
+  user_id: number,
+  vehicle_id: number,
+  booking_date: string,
+  return_date: string,
+  booking_status: string = "Pending"
+): Promise<string> => {
+  const db = getDbPool();
+
+  // Calculate days dynamically in SQL
+  const result = await db.request()
+    .input("user_id", user_id)
+    .input("vehicle_id", vehicle_id)
+    .input("booking_date", booking_date)
+    .input("return_date", return_date)
+    .input("booking_status", booking_status)
+    .query(`
+      INSERT INTO Bookings (user_id, vehicle_id, booking_date, return_date, total_amount, booking_status)
+      OUTPUT INSERTED.booking_id
+      VALUES (
+        @user_id,
+        @vehicle_id,
+        @booking_date,
+        @return_date,
+        (SELECT rental_rate * DATEDIFF(DAY, @booking_date, @return_date) 
+         FROM Vehicle WHERE vehicle_id = @vehicle_id),
+        @booking_status
+      );
+    `);
+
+  return result.rowsAffected[0] === 1 ? "Booking Created Successfully" : "Failed to create booking, try again";
 };
+
 
 // export const updateBookingService = async (booking_id: number,user_id: number,vehicle_id: number,booking_date: string,return_date: string,total_amount: number,booking_status: string): Promise<string> => {
 //     const db = getDbPool();
@@ -55,22 +84,41 @@ export const createBookingService = async (user_id: number,vehicle_id: number,bo
 //     return result.rowsAffected[0] === 1 ? "Booking Updated Successfully": "Failed to update booking, try again";
 // };
 
-export const updateBookingService = async (booking_id: number,user_id: number,vehicle_id: number,booking_date: string,return_date: string,total_amount: number,booking_status: string) => {
-    const db = getDbPool();
-    const result = await db.request()
-        .input("booking_id", booking_id)
-        .input("user_id", user_id)
-        .input("vehicle_id", vehicle_id)
-        .input("booking_date", booking_date)
-        .input("return_date", return_date)
-        .input("total_amount", total_amount)
-        .input("booking_status", booking_status)
-        .query(`UPDATE Bookings SET user_id=@user_id, vehicle_id=@vehicle_id, booking_date=@booking_date, return_date=@return_date, total_amount=@total_amount, booking_status=@booking_status, updated_at=GETDATE()
-            WHERE booking_id=@booking_id;
-            SELECT *, GETDATE() as updated_at_time FROM Bookings WHERE booking_id=@booking_id;
-        `);
-    if (result.rowsAffected[0] === 0) return null;
-    return result.recordset[0]; 
+export const updateBookingService = async (
+  booking_id: number,
+  user_id: number,
+  vehicle_id: number,
+  booking_date: string,
+  return_date: string,
+  booking_status: string
+) => {
+  const db = getDbPool();
+
+  const result = await db.request()
+    .input("booking_id", booking_id)
+    .input("user_id", user_id)
+    .input("vehicle_id", vehicle_id)
+    .input("booking_date", booking_date)
+    .input("return_date", return_date)
+    .input("booking_status", booking_status)
+    .query(`
+      UPDATE Bookings
+      SET 
+        user_id = @user_id,
+        vehicle_id = @vehicle_id,
+        booking_date = @booking_date,
+        return_date = @return_date,
+        total_amount = (SELECT rental_rate * DATEDIFF(DAY, @booking_date, @return_date) 
+                        FROM Vehicle WHERE vehicle_id = @vehicle_id),
+        booking_status = @booking_status,
+        updated_at = GETDATE()
+      WHERE booking_id = @booking_id;
+
+      SELECT * FROM Bookings WHERE booking_id = @booking_id;
+    `);
+
+  if (result.rowsAffected[0] === 0) return null;
+  return result.recordset[0];
 };
 
 
@@ -160,18 +208,23 @@ export const bookingPaymentService = async (booking_id:number) => {
 }
 
 // extend booking
-export const extendBookingService = async (booking_id:number, new_return_date: string) => {
-    const db = getDbPool();
-    const result = await db.request()
-        .input('booking_id',booking_id)
-        .input("new_return_date", new_return_date)
-        .query(` 
-            UPDATE Bookings
-            SET return_date = @new_return_date, updated_at = GETDATE()
-            WHERE booking_id = @booking_id
-            `)
-        return { success: true, message: "Booking extended successfully" };
-}
+export const extendBookingService = async (booking_id: number, new_return_date: string) => {
+  const db = getDbPool();
+  await db.request()
+    .input("booking_id", booking_id)
+    .input("new_return_date", new_return_date)
+    .query(`
+      UPDATE Bookings
+      SET return_date = @new_return_date,
+          total_amount = (SELECT rental_rate * DATEDIFF(DAY, booking_date, @new_return_date) 
+                          FROM Vehicle WHERE vehicle_id = vehicle_id),
+          updated_at = GETDATE()
+      WHERE booking_id = @booking_id
+    `);
+
+  return { success: true, message: "Booking extended successfully" };
+};
+
 
 //cancel booking
 export const cancelBookingService = async(booking_id:number) => {

@@ -93,3 +93,21 @@ export const deleteUser = async (c: Context) => {
         return c.json({ error: 'Failed to delete user' }, 500);
     }
 }
+
+export const updateUserRole = async (c: Context) => {
+  const user_id = Number(c.req.param("user_id"));
+  const { role } = await c.req.json();
+
+  if (!role) {
+    return c.json({ error: "Role is required" }, 400);
+  }
+
+  await userServices.updateUserRoleService(user_id, role);
+  return c.json({ message: "User role updated successfully" });
+};
+
+export const toggleUserStatus = async (c: Context) => {
+  const user_id = Number(c.req.param("user_id"));
+  await userServices.toggleUserStatusService(user_id);
+  return c.json({ message: "User status updated" });
+};

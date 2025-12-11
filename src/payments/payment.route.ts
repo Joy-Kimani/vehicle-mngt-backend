@@ -7,7 +7,7 @@ paymentRoutes.get("payment", paymentController.getAllPayments);
 
 paymentRoutes.get("payment/:payment_id", paymentController.getPaymentById);
 
-paymentRoutes.post("payment/", paymentController.createPayment);
+paymentRoutes.post("/payment", paymentController.createPayment);
 
 paymentRoutes.put("payment/:payment_id", paymentController.updatePayment);
 
@@ -17,9 +17,14 @@ paymentRoutes.post("payment/initialize", paymentController.initializePayment);
 
 paymentRoutes.post("payment/webhook", paymentController.paymentWebhook);
 
-paymentRoutes.get("payment/verify", paymentController.verifyPayment);
+paymentRoutes.get("/payment/verify", paymentController.verifyPayment);
 
 paymentRoutes.get("payment/status/count", paymentController.paymentStatus);
 
+paymentRoutes.get("payment/user/:user_id", paymentController.getPaymentsByUserController)
+
+// paymentRoutes.post("/api/payments/init", paymentController.initializePayment);
+// paymentRoutes.post("/api/payments/create-record", paymentController.createPaymentRecord);
+// paymentRoutes.post("/api/payments/confirm", paymentController.confirmPayment);
 
 export default paymentRoutes

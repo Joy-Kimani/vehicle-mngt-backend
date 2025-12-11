@@ -138,3 +138,39 @@ export const updateUserPasswordService = async (email: string, hashedPassword: s
 
   return "Password updated successfully";
 };
+
+
+export const updateUserRoleService = async (user_id: number, role: string) => {
+  const db = await getDbPool();
+  await db.request()
+    .input("user_id",  user_id)
+    .input("role",  role)
+    .query(`
+      UPDATE Users
+      SET role = @role, updated_at = GETDATE()
+      WHERE user_id = @user_id
+    `);
+};
+
+// export const toggleUserStatusService = async (user_id: number) => {
+//   const db = await getDbPool();
+//   await db
+//     .request()
+//     .input("user_id", user_id)
+//     .query(`
+//       UPDATE Users
+//       SET updated_at = GETDATE()
+//       WHERE user_id = @user_id
+//     `);
+// };
+export const toggleUserStatusService = async (user_id: number) => {
+  const db = await getDbPool()
+  await db.request()
+    .input("user_id", user_id)
+    .query(`
+      UPDATE Users
+      SET is_active = CASE WHEN is_active = 1 THEN 0 ELSE 1 END,
+          updated_at = GETDATE()
+      WHERE user_id = @user_id
+    `);
+};

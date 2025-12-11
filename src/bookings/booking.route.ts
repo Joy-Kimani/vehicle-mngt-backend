@@ -8,7 +8,7 @@ bookingRoutes.get('/bookings', bookingControllers.getAllBookings)
 
 bookingRoutes.get('/bookings/user/:user_id', bookingControllers.getBookingsByUser);
 
-bookingRoutes.get('/bookings/:booking_id', bookingControllers.getBookingById);
+bookingRoutes.get('/bookings/:bookingId', bookingControllers.getBookingById);
 
 bookingRoutes.post('/bookings', bookingControllers.createBooking)
 

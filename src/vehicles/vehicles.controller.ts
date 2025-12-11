@@ -33,51 +33,72 @@ export const getVehicleById = async (c: Context) => {
   }
 };
 
-// create vehicle with images
-export const createVehicle = async (c: Context) => {
-  try {   
-    const body = await c.req.json() as {
-      vehicle_spec_id: number;
-      rental_rate: number;
-      availability: boolean;
-      front_image_url?: string;
-      back_image_url?: string;
-      side_image_url?: string;
-      interior_image_url?: string;
-    };
+// // create vehicle with images
+// export const createVehicle = async (c: Context) => {
+//   try {   
+//     const body = await c.req.json() as {
+//       vehicle_spec_id: number;
+//       rental_rate: number;
+//       availability: boolean;
+//       front_image_url?: string;
+//       back_image_url?: string;
+//       side_image_url?: string;
+//       interior_image_url?: string;
+//     };
 
-    const result = await vehicleServices.createVehicleService(body); 
+//     const result = await vehicleServices.createVehicleService(body); 
 
-    return c.json({ message: result }, 201);
-  } catch (error) {
-    console.error("Error creating vehicle:", error);
-    return c.json({ error: "Failed to create vehicle" }, 500);
-  }
-};
+//     return c.json({ message: result }, 201);
+//   } catch (error) {
+//     console.error("Error creating vehicle:", error);
+//     return c.json({ error: "Failed to create vehicle" }, 500);
+//   }
+// };
 
 // update vehicle with images
 export const updateVehicle = async (c: Context) => {
   try {
     const vehicle_id = parseInt(c.req.param("vehicle_id"));
 
+    // Extract request body exactly as service expects
     const body = await c.req.json() as {
-      vehicle_spec_id: number;
-      rental_rate: number;
-      availability: boolean;
-      front_image_url?: string;
-      back_image_url?: string;
-      side_image_url?: string;
-      interior_image_url?: string;
+      vehicle_spec: {
+        vehicle_spec_id: number;
+        manufacturer: string;
+        model: string;
+        fuel_type: string;
+        engine_capacity: string;
+        year: number;
+        color: string;
+        features?: string;
+        transmission: string;
+        seating_capacity: number;
+      };
+      vehicle: {
+        vehicle_id: number;
+        vehicle_spec_id: number;
+        rental_rate: number;
+        availability: boolean;
+        front_image_url?: string;
+        back_image_url?: string;
+        side_image_url?: string;
+        interior_image_url?: string;
+      };
     };
 
-    // check if vehicle exists 
+    // Check if vehicle id in param matches what was sent in body
+    if (body.vehicle.vehicle_id !== vehicle_id) {
+      return c.json({ error: "Vehicle ID mismatch" }, 400);
+    }
+
+    // Check if vehicle exists
     const checkExists = await vehicleServices.getVehicleByIdServices(vehicle_id);
     if (!checkExists) return c.json({ error: "Vehicle not found" }, 404);
 
-   
-    const result = await vehicleServices.updateVehicleService(vehicle_id, body);
+    // Call service with the body
+    const result = await vehicleServices.updateVehicleService(c);
 
-    return c.json({ message: result }, 200);
+    return c.json({ message: "Vehicle and specs updated successfully" }, 200);
   } catch (error) {
     console.error("Error updating vehicle:", error);
     return c.json({ error: "Failed to update vehicle" }, 500);
@@ -101,3 +122,13 @@ export const deleteVehicle = async (c: Context) => {
   }
 };
 
+// create vehicle with specs
+export const createVehicleWithSpecs = async (c: Context) => {
+  try {
+    const result = await vehicleServices.createVehicleWithSpec(c);
+    return result;
+  } catch (error) {
+    console.error("Error creating vehicle with specs:", error);
+    return c.json({ error: "Failed to create vehicle with specs" }, 500);
+  }
+};

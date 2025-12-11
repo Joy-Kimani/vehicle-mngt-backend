@@ -18,4 +18,7 @@ userRoutes.put('/users/:user_id', userControllers.updateUser)
 // Delete user by user_id
 userRoutes.delete('/users/:user_id', userControllers.deleteUser)
 
+userRoutes.put("users/:user_id/role", userControllers.updateUserRole);
+userRoutes.put("users/:user_id/status", userControllers.toggleUserStatus);
+
 export default userRoutes

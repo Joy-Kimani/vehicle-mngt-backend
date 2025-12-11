@@ -13,6 +13,10 @@ import paymentRoutes from './payments/payment.route.js';
 import vehicleRoutes from './vehicles/vehicles.route.js';
 import vehicleSpecRoutes from './vehiclespecs/vehicleSpecs.routes.js';
 import dashboardRoutes from './UserDashboard/dashboard.routes.js';
+import chatRoute from './routes/chat.routes.js';
+// import { createServer } from 'http';
+// import { Server } from 'socket.io';
+
 
 const app = new Hono()
 
@@ -31,6 +35,7 @@ app.use(limiter);         // Rate limiter
 app.get('/', (c) => {
   return c.text('Hello Hono!')
 })
+app.get("/api/chat", (c) => c.text("Car Rental AI Chatbot is running 🚗🤖"));
 
 //mount routes
 app.route('/api', authRoutes)
@@ -41,6 +46,8 @@ app.route('/api', paymentRoutes)
 app.route('/api', vehicleRoutes)
 app.route('/api', vehicleSpecRoutes)
 app.route('api', dashboardRoutes)
+
+app.route("/api/chat", chatRoute);
 
 // 404 Handler
 app.notFound((c: Context) => {
