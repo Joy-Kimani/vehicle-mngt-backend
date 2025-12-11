@@ -8,7 +8,7 @@ interface UserResponse{
     password:string;
     contact_phone: string;
     address?:string;
-    role:string;
+    role?:string;
 }
 
 //get all users

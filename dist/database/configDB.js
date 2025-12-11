@@ -10,20 +10,44 @@ assert(DB_PORT, 'SQL_PORT is not defined in environment variables');
 assert(DB_DATABASE, 'SQL_DATABASE is not defined in environment variables');
 //Database Configuration
 export const Config = {
-    user: DB_USER,
-    password: DB_PASSWORD,
-    server: DB_SERVER || 'localhost',
-    port: parseInt(DB_PORT || '1433'),
-    database: DB_DATABASE,
-    pool: {
-        max: 10,
-        min: 0,
-        idleTimeoutMillis: 30000
+    sqlConfig: {
+        user: DB_USER,
+        password: DB_PASSWORD,
+        server: DB_SERVER || 'localhost',
+        port: parseInt(DB_PORT || '1433'),
+        database: DB_DATABASE,
+        pool: {
+            max: 10,
+            min: 0,
+            idleTimeoutMillis: 30000
+        },
+        options: {
+            encrypt: false,
+            trustServerCertificate: true,
+            enableArithAbort: true
+        },
     },
-    options: {
-        encrypt: false,
-        trustServerCertificate: true,
-        enableArithAbort: true
+    //azure sql config
+    azureConfig: {
+        user: DB_USER,
+        password: DB_PASSWORD,
+        server: DB_SERVER,
+        database: DB_DATABASE,
+        port: parseInt(DB_PORT || '1433'),
+        connectionTimeout: 30000,
+        requestTimeout: 30000,
+        pool: {
+            max: 10,
+            min: 0,
+            idleTimeoutMillis: 30000
+        },
+        options: {
+            encrypt: true,
+            trustServerCertificate: false,
+            enableArithAbort: true,
+            connectTimeout: 30000,
+            requestTimeout: 30000
+        }
     }
 };
 let globalPool = null;
@@ -33,12 +57,23 @@ const initDatabaseConnection = async () => {
         return globalPool;
     }
     try {
-        globalPool = await sql.connect(Config);
-        console.log('Connected to Database');
+        const isProduction = process.env.NODE_ENV === 'production';
+        const config = isProduction ? Config.azureConfig : Config.sqlConfig;
+        console.log(`Connecting to database with server: ${config.server}`);
+        console.log(`Using ${isProduction ? 'Azure' : 'Local'} configuration`);
+        globalPool = await sql.connect(config);
+        console.log('Connected to SQL SERVER Database');
         return globalPool;
     }
     catch (error) {
         console.error('Database Connection Failed! ', error);
+        // Log additional debugging information
+        console.error('Environment variables:');
+        console.error(`DB_SERVER: ${DB_SERVER}`);
+        console.error(`DB_DATABASE: ${DB_DATABASE}`);
+        console.error(`DB_USER: ${DB_USER}`);
+        console.error(`NODE_ENV: ${process.env.NODE_ENV}`);
+        // console.error(`WEBSITE_SITE_NAME: ${process.env.WEBSITE_SITE_NAME}`);
         throw error;
     }
 };

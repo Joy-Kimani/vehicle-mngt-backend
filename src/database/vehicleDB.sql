@@ -1,11 +1,4 @@
 -- . Users Table:
--- {
---   "scripts": {
---     "dev": "nodemon src/index.ts",
---     "build": "tsc",
---     "start": "node dist/index.js"
---   }
--- }
 
 -- o Fields: user_id (PK), first_name,last_name email (UNIQUE), password contact_phone, address, role (ENUM: 'user', 'admin' DEFAULT 'user'), created_at, updated_at.
 CREATE DATABASE VehicleRentalMngtDB;
