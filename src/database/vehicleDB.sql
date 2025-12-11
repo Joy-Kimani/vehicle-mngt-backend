@@ -1,4 +1,11 @@
 -- . Users Table:
+-- {
+--   "scripts": {
+--     "dev": "nodemon src/index.ts",
+--     "build": "tsc",
+--     "start": "node dist/index.js"
+--   }
+-- }
 
 -- o Fields: user_id (PK), first_name,last_name email (UNIQUE), password contact_phone, address, role (ENUM: 'user', 'admin' DEFAULT 'user'), created_at, updated_at.
 CREATE DATABASE VehicleRentalMngtDB;
@@ -122,7 +129,7 @@ CREATE TABLE OTPs (
 CREATE TABLE ticket_messages (message_id INT IDENTITY(1,1) PRIMARY KEY,ticket_id INT NOT NULL,from_admin BIT NOT NULL,           message NVARCHAR(MAX) NOT NULL,     created_at DATETIME DEFAULT GETDATE()
 );
 GO
-
+ALTER TABLE Payments ALTER COLUMN transaction_id NVARCHAR(255);
 
 ALTER TABLE Vehicle ADD front_image_url VARCHAR(MAX),back_image_url VARCHAR(MAX),side_image_url VARCHAR(MAX),interior_image_url VARCHAR(MAX);
 
@@ -219,4 +226,4 @@ FROM (
 ORDER BY activity_date DESC;
 
 
-ALTER TABLE Payments ALTER COLUMN transaction_id NVARCHAR(255);
+
