@@ -110,6 +110,10 @@ app.get('/api/chat', (c) => c.text("Car Rental AI Chatbot is running 🚗🤖"))
 app.get('/doc', (c) => c.json(openApiDoc));
 app.get('/api/docs', swaggerUI({ url: '/doc' }));
 
+app.get("/test", (c) => 
+  c.json({ ok: true })
+);
+
 
 // Mount API Routes
 
