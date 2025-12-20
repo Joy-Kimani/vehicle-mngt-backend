@@ -61,5 +61,5 @@ jobs:
         with:
           app-name: 'carrentals-mngt'
           slot-name: 'Production'
-          package: .
+          package: ./dist
           
